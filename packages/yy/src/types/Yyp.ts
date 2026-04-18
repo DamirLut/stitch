@@ -42,24 +42,36 @@ const yypConfigSchema: z.ZodSchema<YypConfig> = z.lazy(() =>
   }),
 );
 
-export type YypRoomOrderNode = z.infer<typeof yypRoomOrderNodeSchema>;
-const yypRoomOrderNodeSchema = z.object({
-  roomId: z.preprocess(
-    (input) => {
-      if (isObjectWithField(input, 'name') && typeof input.name === 'string') {
-        if (!input.path) {
-          input.path = `rooms/${input.name}/${input.name}.yy`;
-        }
+const yypRoomIdSchema = z.preprocess(
+  (input) => {
+    if (isObjectWithField(input, 'name') && typeof input.name === 'string') {
+      if (!input.path) {
+        input.path = `rooms/${input.name}/${input.name}.yy`;
       }
-      return input;
-    },
-    z.object({
-      name: z.string(),
-      /** rooms/{name}/{name}.yy */
-      path: z.string(),
-    }),
-  ),
-});
+    }
+    return input;
+  },
+  z.object({
+    name: z.string(),
+    /** rooms/{name}/{name}.yy */
+    path: z.string(),
+  }),
+);
+
+export type YypRoomOrderNode =
+  | { roomId: { name: string; path: string } }
+  | { children: YypRoomOrderNode[]; groupName: string };
+
+export const yypRoomOrderNodeSchema: z.ZodSchema<YypRoomOrderNode> = z.lazy(
+  () =>
+    z.union([
+      z.object({ roomId: yypRoomIdSchema }),
+      z.object({
+        children: z.array(yypRoomOrderNodeSchema),
+        groupName: z.string(),
+      }),
+    ]),
+);
 
 export type YypFolder = z.infer<typeof yypFolderSchema>;
 export const yypFolderSchema = z.preprocess(

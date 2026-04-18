@@ -268,12 +268,21 @@ export class Project {
     );
     // If it's a room, remove it from the room order list
     if (isAssetOfKind(asset, 'rooms')) {
-      this.yyp.RoomOrderNodes = this.yyp.RoomOrderNodes.filter((node) => {
-        return (
-          node.roomId.path.toLowerCase() !==
-          asset.resource.id.path.toLowerCase()
-        );
-      });
+      const filterRoomNodes = (
+        nodes: typeof this.yyp.RoomOrderNodes,
+      ): typeof this.yyp.RoomOrderNodes => {
+        return nodes.filter((node) => {
+          if ('roomId' in node) {
+            return (
+              node.roomId.path.toLowerCase() !==
+              asset.resource.id.path.toLowerCase()
+            );
+          }
+          node.children = filterRoomNodes(node.children);
+          return true;
+        });
+      };
+      this.yyp.RoomOrderNodes = filterRoomNodes(this.yyp.RoomOrderNodes);
     }
     // If it'll be referenced in other assets, remove those references
     else if (
